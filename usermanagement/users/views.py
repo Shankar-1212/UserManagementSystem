@@ -43,7 +43,7 @@ def register_user(request):
 def login_user(request):
     if request.method == 'POST':
         rest_api_url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
-        api_key = ""  # Replace with your actual Firebase API key
+        api_key = "AIzaSyD-5jA4Nj5uumvme4VUNM0FchXHPyTBmeU"  # Replace with your actual Firebase API key
         if request.method == 'POST':
             data = json.loads(request.body)
             email = data.get('email')
@@ -62,8 +62,8 @@ def login_user(request):
         response = requests.post(rest_api_url, params={"key": api_key}, json=payload)
     
         if response.status_code == 200:
-            return Response(response.json().get('idToken'))
-
+            # return idToken with title idtoken
+            return JsonResponse({"idtoken": response.json().get('idToken')})
         else:
             error_message = response.json().get('error', {}).get('message', 'Authentication failed.')
             return JsonResponse({"error": error_message}, status=response.status_code)
@@ -90,6 +90,59 @@ def retrieve_user_profile(request):
                         # Include other profile information from the Firestore document
                     }
                     return JsonResponse(profile_data)
+                else:
+                    return JsonResponse({'error': 'User profile not found'}, status=404)
+            else:
+                return JsonResponse({'error': 'Email not provided'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format in the request body'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+@api_view(['PUT'])
+def update_user_profile(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            user_email = data.get('email')  # Get the user email from the request body
+
+            if user_email:
+                users_ref = db.collection('users')
+                query = users_ref.where('email', '==', user_email).limit(1)
+                user_data = [doc for doc in query.stream()]
+
+                if user_data:
+                    user_ref = users_ref.document(user_data[0].id)
+                    # Update profile data except for the password field
+                    # Example: Updating the full_name field
+                    user_ref.update({
+                        'full_name': data.get('full_name')
+                        # Add other fields to update
+                    })
+                    return JsonResponse({'message': 'User profile updated successfully'})
+                else:
+                    return JsonResponse({'error': 'User profile not found'}, status=404)
+            else:
+                return JsonResponse({'error': 'Email not provided'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format in the request body'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+@api_view(['DELETE'])
+def delete_user_profile(request):
+    if request.method == 'DELETE':
+        try:
+            data = json.loads(request.body)
+            user_email = data.get('email')  # Get the user email from the request body
+
+            if user_email:
+                users_ref = db.collection('users')
+                query = users_ref.where('email', '==', user_email).limit(1)
+                user_data = [doc for doc in query.stream()]
+
+                if user_data:
+                    user_ref = users_ref.document(user_data[0].id)
+                    user_ref.delete()
+                    return JsonResponse({'message': 'User account deleted successfully'})
                 else:
                     return JsonResponse({'error': 'User profile not found'}, status=404)
             else:
