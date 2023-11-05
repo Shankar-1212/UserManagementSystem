@@ -6,7 +6,7 @@ Create a Firebase account and start a new project setup it and create api_token 
 
 Clone the repository:
 ```
-git clone https://github.com/Shankar-1212/UserManagementSystem.
+git clone https://github.com/Shankar-1212/UserManagementSystem.git
 ```
 Install the required dependencies:
 ```
